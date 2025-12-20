@@ -19,6 +19,19 @@ const Dashboard: React.FC = () => {
   const [todayStats, setTodayStats] = useState<DailyResult>(null);
   const [yesterdayStats, setYesterdayStats] = useState<DailyResult>(null);
 
+  // Row type for the Top Sites table
+  type TopSiteRow = {
+    key: number;
+    url: string;
+    hostname: string;
+    time: number;
+    sessions: number;
+    productivity: number;
+    productivityLevel?: string;
+    productivityColor?: string;
+    favicon?: string;
+  };
+
   useEffect(() => {
     const loadStats = async () => {
       setLoading(true);
@@ -83,9 +96,9 @@ const Dashboard: React.FC = () => {
       title: 'Productivity',
       dataIndex: 'productivity',
       key: 'productivity',
-      render: (score: number, record: any) => {
+      render: (score: number, record: TopSiteRow) => {
         const recommendation = getProductivityRecommendation(score);
-        
+
         return (
           <div>
             <Tag 
