@@ -38,9 +38,16 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
     }
   };
   
-  const handleCustomRangeChange = (dates: Array<{ toDate: () => Date } | null> | null) => {
-    if (dates && dates.length === 2 && dates[0] && dates[1]) {
-      onRangeChange('custom', [dates[0].toDate(), dates[1].toDate()]);
+  // Ant Design's RangePicker uses Dayjs internally, but we avoid adding dayjs as a dependency.
+  // Use a structural tuple type that accepts objects implementing `toDate()` so the handler works with
+  // whatever date-like objects the picker provides while keeping strict typing.
+  const handleCustomRangeChange = (
+    dates: [ { toDate: () => Date } | null, { toDate: () => Date } | null ] | null
+  ) => {
+    if (!dates) return;
+    const [start, end] = dates;
+    if (start && end) {
+      onRangeChange('custom', [start.toDate(), end.toDate()]);
     }
   };
   
