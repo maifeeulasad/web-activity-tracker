@@ -23,6 +23,20 @@ const App: React.FC = () => {
   const [selectedMenu, setSelectedMenu] = useState<MenuKey>('dashboard');
   const { settings } = useSettings();
 
+  // On initial load, check the hash and show the corresponding view (useful when opening index.html#analytics)
+  React.useEffect(() => {
+    try {
+      const h = window.location.hash.replace('#', '');
+      if (h === 'analytics') setSelectedMenu('analytics');
+      else if (h === 'tracker') setSelectedMenu('tracker');
+      else if (h === 'limits') setSelectedMenu('limits');
+      else if (h === 'settings') setSelectedMenu('settings');
+      else if (h === 'dashboard') setSelectedMenu('dashboard');
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   const menuItems = [
     {
       key: 'dashboard' as MenuKey,
