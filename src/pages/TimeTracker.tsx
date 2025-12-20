@@ -178,9 +178,10 @@ const TimeTracker: React.FC = () => {
             <List
               dataSource={recentTabs}
               renderItem={(tab) => (
-                <List.Item
+                <List.Item key={tab.url}
                   actions={[
                     <Button
+                      key="delete"
                       type="text"
                       size="small"
                       danger
