@@ -2,11 +2,20 @@ import { Tab, TimeInterval } from '../types';
 import { formatDate, getHostname } from './helpers';
 import { calculateWebsiteProductivity } from './productivityData';
 
+// Helper to iterate dates from start to end (inclusive) using local-date normalization
+function iterateDaysLocal(start: Date, end: Date, cb: (d: Date) => void) {
+  const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+    cb(new Date(d));
+  }
+}
+
 export const prepareTimeTrendData = (_tabs: Tab[], intervals: TimeInterval[], _start: Date, _end: Date) => {
   const days: Record<string, number> = {};
-  for (let d = new Date(_start); d <= _end; d.setDate(d.getDate() + 1)) {
-    days[formatDate(new Date(d))] = 0;
-  }
+  iterateDaysLocal(_start, _end, (d) => {
+    days[formatDate(d)] = 0;
+  });
 
   intervals.forEach(i => {
     if (i && i.date && days[i.date] !== undefined) {
@@ -20,14 +29,14 @@ export const prepareTimeTrendData = (_tabs: Tab[], intervals: TimeInterval[], _s
 export const prepareDailyActivityData = (tabs: Tab[], _start: Date, _end: Date) => {
   // aggregate activity data for each day in range
   const days: Array<{ date: string; total: number }> = [];
-  for (let d = new Date(_start); d <= _end; d.setDate(d.getDate() + 1)) {
-    const dateStr = formatDate(new Date(d));
+  iterateDaysLocal(_start, _end, (d) => {
+    const dateStr = formatDate(d);
     const total = tabs.reduce((sum, t) => {
       const day = t.days.find(dd => dd.date === dateStr);
       return sum + (day?.summary || 0);
     }, 0);
     days.push({ date: dateStr, total });
-  }
+  });
   return days;
 };
 
@@ -64,14 +73,14 @@ export const prepareHourlyPatternData = (intervals: TimeInterval[], date: Date) 
 export const prepareSessionAnalysisData = (tabs: Tab[], _start: Date, _end: Date) => {
   // Sessions are approximated by day counters
   const sessions: Array<{ date: string; sessions: number }> = [];
-  for (let d = new Date(_start); d <= _end; d.setDate(d.getDate() + 1)) {
-    const dateStr = formatDate(new Date(d));
+  iterateDaysLocal(_start, _end, (d) => {
+    const dateStr = formatDate(d);
     const totalSessions = tabs.reduce((sum, t) => {
       const day = t.days.find(dd => dd.date === dateStr);
       return sum + (day?.counter || 0);
     }, 0);
     sessions.push({ date: dateStr, sessions: totalSessions });
-  }
+  });
   return sessions;
 };
 
