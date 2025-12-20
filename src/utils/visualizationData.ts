@@ -18,7 +18,7 @@ export const prepareTimeTrendData = (_tabs: Tab[], intervals: TimeInterval[], _s
 };
 
 export const prepareDailyActivityData = (tabs: Tab[], _start: Date, _end: Date) => {
-  // flatten days in range
+  // aggregate activity data for each day in range
   const days: Array<{ date: string; total: number }> = [];
   for (let d = new Date(_start); d <= _end; d.setDate(d.getDate() + 1)) {
     const dateStr = formatDate(new Date(d));
