@@ -30,9 +30,11 @@ const Settings: React.FC = () => {
   const { settings, updateSetting, resetSettings } = useSettings();
   const [loading, setLoading] = useState(false);
 
-  const handleSettingChange = async (key: string, value: any) => {
+  const handleSettingChange = async <K extends keyof typeof settings>(key: K, value: typeof settings[K] | null) => {
     try {
-      await updateSetting(key as any, value);
+      // Normalize nulls from some components (e.g. InputNumber returns number | null)
+      const normalized = value === null ? (typeof settings[key] === 'number' ? (settings[key] as number) : value) : value;
+      await updateSetting(key, normalized as typeof settings[K]);
       message.success('Setting updated successfully');
     } catch (error) {
       message.error('Failed to update setting');
