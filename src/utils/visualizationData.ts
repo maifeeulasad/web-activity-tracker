@@ -75,9 +75,30 @@ export const prepareSessionAnalysisData = (tabs: Tab[], _start: Date, _end: Date
   return sessions;
 };
 
-export const prepareWeeklyOverviewData = (tabs: Tab[]) => {
-  // return top 7 sites ranked by total time spent
-  return tabs.map(t => ({ url: t.url, time: t.summaryTime, favicon: t.favicon }))
+export const prepareWeeklyOverviewData = (tabs: Tab[], _start?: Date, _end?: Date) => {
+  // return top 7 sites summary, optionally constrained to a date range
+  if (!_start || !_end) {
+    // Fallback to original behavior: use overall summaryTime
+    return tabs.map(t => ({ url: t.url, time: t.summaryTime, favicon: t.favicon }))
+      .sort((a, b) => b.time - a.time)
+      .slice(0, 7);
+  }
+
+  const startTime = _start.getTime();
+  const endTime = _end.getTime();
+
+  return tabs
+    .map(t => {
+      const timeInRange = (t.days || []).reduce((sum, d) => {
+        const dayTime = new Date(d.date).getTime();
+        if (dayTime < startTime || dayTime > endTime) {
+          return sum;
+        }
+        return sum + (d.summary || 0);
+      }, 0);
+
+      return { url: t.url, time: timeInRange, favicon: t.favicon };
+    })
     .sort((a, b) => b.time - a.time)
     .slice(0, 7);
 };
