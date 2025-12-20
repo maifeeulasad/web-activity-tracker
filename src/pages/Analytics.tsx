@@ -232,14 +232,37 @@ const Analytics: React.FC = () => {
         </TabPane>
 
         <TabPane tab="Site Breakdown" key="sites">
-          <Card title="Detailed Site Statistics">
-            <Table
-              dataSource={topSitesData}
-              columns={tableColumns}
-              pagination={{ pageSize: 10 }}
-              scroll={{ x: true }}
-            />
-          </Card>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} lg={12}>
+              <Card title="Time Breakdown by Site" style={{ height: '400px' }}>
+                <Pie
+                  data={topSitesData.map(item => ({ type: item.site, value: item.time }))}
+                  angleField="value"
+                  colorField="type"
+                  radius={0.8}
+                  label={{
+                    type: 'outer',
+                    content: (item: { type?: string; value?: number }) => `${item.type ?? ''} ${formatDuration(Number(item.value ?? 0))}`,
+                  }}
+                  tooltip={{
+                    formatter: (datum: { type?: string; value?: number }) => ({ name: datum.type, value: formatDuration(Number(datum.value ?? 0)) }),
+                  }}
+                  height={360}
+                />
+              </Card>
+            </Col>
+
+            <Col xs={24} lg={12}>
+              <Card title="Detailed Site Statistics" style={{ height: '400px', overflow: 'auto' }}>
+                <Table
+                  dataSource={topSitesData.map((t, i) => ({ ...t, key: t.site || i }))}
+                  columns={tableColumns}
+                  pagination={{ pageSize: 10 }}
+                  scroll={{ x: true }}
+                />
+              </Card>
+            </Col>
+          </Row>
         </TabPane>
       </Tabs>
     </div>
