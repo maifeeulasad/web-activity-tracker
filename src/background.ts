@@ -26,8 +26,19 @@ function generateId() {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
-// Get hostname from URL
+// Get hostname from URL (normalized)
 function getHostname(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    // Only return hostname, ignore path, query, and hash
+    return urlObj.hostname;
+  } catch {
+    return url;
+  }
+}
+
+// Normalize URL to just hostname for storage
+function normalizeUrl(url: string): string {
   try {
     const urlObj = new URL(url);
     return urlObj.hostname;
@@ -45,8 +56,8 @@ async function saveTimeInterval(tabInfo: chrome.tabs.Tab, startTime: number, end
 
   const interval = {
     id: generateId(),
-    tabId: tabInfo.id.toString(),
-    url: tabInfo.url,
+    tabId: normalizeUrl(tabInfo.url),
+    url: normalizeUrl(tabInfo.url),
     title: tabInfo.title || getHostname(tabInfo.url),
     startTime,
     endTime,
@@ -67,13 +78,13 @@ async function updateTabSummary(tabInfo: chrome.tabs.Tab, additionalTime: number
   try {
     if (!tabInfo.url) return; // Skip if URL is missing
 
-    const url = getHostname(tabInfo.url);
-    let tab = await storageManager.getTab(url);
+    const normalizedUrl = normalizeUrl(tabInfo.url);
+    let tab = await storageManager.getTab(normalizedUrl);
     const today = getCurrentDate();
 
     if (!tab) {
       tab = {
-        url,
+        url: normalizedUrl,
         favicon: tabInfo.favIconUrl,
         summaryTime: 0,
         counter: 0,
@@ -99,10 +110,11 @@ async function updateTabSummary(tabInfo: chrome.tabs.Tab, additionalTime: number
     todayData.summary += additionalTime;
     todayData.counter += 1;
 
-    await storageManager.saveTab(tab);
+    // Use saveOrUpdateTab to handle existing records properly
+    await storageManager.saveOrUpdateTab(tab);
 
     // Check site limits
-    await checkSiteLimit(url, todayData.summary);
+    await checkSiteLimit(normalizedUrl, todayData.summary);
   } catch (error) {
     console.error('Failed to update tab summary:', error);
   }
