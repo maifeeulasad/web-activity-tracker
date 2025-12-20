@@ -189,7 +189,14 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
           <Button 
             icon={<FullscreenOutlined />} 
             size="small"
-            onClick={() => window.open('/analytics', '_blank')}
+            onClick={() => {
+              // Use chrome.runtime.getURL when available (extension context) to open the analytics hash route
+              const base = (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function')
+                ? chrome.runtime.getURL('index.html#analytics')
+                : '/index.html#analytics';
+
+              window.open(base, '_blank');
+            }}
           >
             Full Analytics
           </Button>
