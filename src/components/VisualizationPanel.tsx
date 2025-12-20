@@ -161,7 +161,7 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
         
         <div style={{ height: height - 120 }}>
           <ChartRenderer
-            chartId="timeTrend"
+            chartId="weeklyOverview"
             data={chartData.weeklyOverview}
             loading={loading}
             height={height - 120}
