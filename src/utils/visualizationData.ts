@@ -46,12 +46,17 @@ export const prepareProductivityTrendData = (tabs: Tab[], _start: Date, _end: Da
   return prepareTimeTrendData(tabs, [], _start, _end).map(d => ({ ...d, productivity: Math.round(Math.random() * 40) + 60 }));
 };
 
-export const prepareHourlyPatternData = (intervals: TimeInterval[], _date: Date) => {
+export const prepareHourlyPatternData = (intervals: TimeInterval[], date: Date) => {
+  // Only include intervals that fall on the requested date
+  const targetDate = formatDate(date);
+
   const arr = new Array(24).fill(0);
   intervals.forEach(i => {
+    if (!i || i.date !== targetDate) return;
     const hour = new Date(i.startTime).getHours();
     arr[hour] += i.duration || 0;
   });
+
   return arr.map((time, hour) => ({ hour, time }));
 };
 
