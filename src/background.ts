@@ -1,5 +1,5 @@
 // Background service worker for Web Activity Tracker
-import { storageManager } from './storage/database.js';
+import { storageManager } from './storage/database';
 
 // Track current active tab and timing
 let currentTab: chrome.tabs.Tab | null = null;
