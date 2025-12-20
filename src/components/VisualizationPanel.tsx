@@ -83,8 +83,10 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
     
     // Default to this week
     const today = new Date();
-    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-    const endOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(today.getDate() - today.getDay() + 6);
     return [startOfWeek, endOfWeek];
   };
   
