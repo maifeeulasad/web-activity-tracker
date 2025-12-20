@@ -1,9 +1,9 @@
-import dayjs from 'dayjs';
+import { format, isSameDay, subDays } from 'date-fns';
 import { Tab, TabDay, TimeInterval } from '../types';
 
 // Date utilities
 export const formatDate = (date: Date | string): string => {
-  return dayjs(date).format('YYYY-MM-DD');
+  return format(typeof date === 'string' ? new Date(date) : date, 'yyyy-MM-dd');
 };
 
 export const formatTime = (seconds: number): string => {
@@ -32,19 +32,19 @@ export const formatDuration = (seconds: number): string => {
 };
 
 export const isToday = (date: string): boolean => {
-  return dayjs(date).isSame(dayjs(), 'day');
+  return isSameDay(new Date(date), new Date());
 };
 
 export const isYesterday = (date: string): boolean => {
-  return dayjs(date).isSame(dayjs().subtract(1, 'day'), 'day');
+  return isSameDay(new Date(date), subDays(new Date(), 1));
 };
 
 export const getDateRange = (days: number): { start: string; end: string } => {
-  const end = dayjs();
-  const start = end.subtract(days, 'day');
+  const end = new Date();
+  const start = subDays(end, days);
   return {
-    start: start.format('YYYY-MM-DD'),
-    end: end.format('YYYY-MM-DD'),
+    start: format(start, 'yyyy-MM-dd'),
+    end: format(end, 'yyyy-MM-dd'),
   };
 };
 
