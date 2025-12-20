@@ -4,9 +4,10 @@ import { ArrowUpOutlined, ArrowDownOutlined, ClockCircleOutlined, GlobalOutlined
 import { useTracker } from '../hooks/useTracker';
 import { formatDuration, formatDate, calculateDailySummary, getHostname } from '../utils/helpers';
 import { calculateWebsiteProductivity, getProductivityRecommendation } from '../utils/productivityData';
+import VisualizationPanel from '../components/VisualizationPanel';
 
 const Dashboard: React.FC = () => {
-  const { tabs } = useTracker();
+  const { tabs, timeIntervals } = useTracker();
   const [loading, setLoading] = useState(true);
   type DailyResult = {
     totalTime: number;
@@ -206,18 +207,11 @@ const Dashboard: React.FC = () => {
 
         <Col xs={24} lg={12}>
           <Card title="Weekly Overview" style={{ height: '400px' }}>
-            <div style={{ height: '300px' }}>
-              {/* Weekly chart would go here */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100%',
-                color: '#999'
-              }}>
-                Weekly chart visualization coming soon...
-              </div>
-            </div>
+            <VisualizationPanel
+              tabs={tabs}
+              timeIntervals={timeIntervals}
+              height={300}
+            />
           </Card>
         </Col>
       </Row>
