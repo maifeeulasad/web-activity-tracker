@@ -51,7 +51,7 @@ const SiteLimits: React.FC = () => {
     setIsModalVisible(true);
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: { url: string; dailyLimit: number; enabled: boolean }) => {
     const sanitizedUrl = sanitizeUrl(values.url);
     if (!sanitizedUrl) {
       return;
