@@ -254,7 +254,7 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
         size="small"
         tabPosition="top"
       >
-        {CHART_PRESETS.find((p: { id: string }) => p.id === config.preset)?.charts.map((chartId: string) => (
+        {(CHART_PRESETS.find((p: { id: string }) => p.id === config.preset)?.charts ?? []).map((chartId: string) => (
           <TabPane 
             tab={
               <span>
