@@ -7,8 +7,16 @@ import { formatDuration, formatDate, calculateDailySummary, getHostname } from '
 const Dashboard: React.FC = () => {
   const { tabs } = useTracker();
   const [loading, setLoading] = useState(true);
-  const [todayStats, setTodayStats] = useState<any>(null);
-  const [yesterdayStats, setYesterdayStats] = useState<any>(null);
+  type DailyResult = {
+    totalTime: number;
+    siteCount: number;
+    mostVisitedSite?: string;
+    topSites?: Array<{ url: string; time: number; favicon?: string; sessions?: number; productivityScore?: number }>;
+    productivityScore?: number;
+  } | null;
+
+  const [todayStats, setTodayStats] = useState<DailyResult>(null);
+  const [yesterdayStats, setYesterdayStats] = useState<DailyResult>(null);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -43,7 +51,7 @@ const Dashboard: React.FC = () => {
       title: 'Website',
       dataIndex: 'url',
       key: 'url',
-      render: (url: string, record: any) => (
+      render: (url: string, record: { favicon?: string }) => (
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {record.favicon && (
             <img
@@ -145,12 +153,12 @@ const Dashboard: React.FC = () => {
         <Col xs={24} lg={12}>
           <Card title="Top Sites Today" style={{ height: '400px' }}>
             <Table
-              dataSource={todayStats?.topSites?.slice(0, 5).map((site: any, index: number) => ({
+              dataSource={todayStats?.topSites?.slice(0, 5).map((site, index) => ({
                 key: index,
                 url: site.url,
                 time: site.time,
                 sessions: site.sessions || 0,
-                productivity: Math.floor(Math.random() * 40) + 60, // Mock productivity score
+                productivity: site.productivityScore ?? Math.floor(Math.random() * 40) + 60,
                 favicon: site.favicon,
               })) || []}
               columns={tableColumns}
