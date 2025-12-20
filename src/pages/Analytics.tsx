@@ -8,29 +8,29 @@ import {
   formatDate,
   calculateDailySummary,
   calculateHourlyData,
-  getHostname
+  getHostname,
 } from '../utils/helpers';
-import dayjs from 'dayjs';
+import { subDays, eachDayOfInterval } from 'date-fns';
 
 const { RangePicker } = DatePicker;
 const { TabPane } = Tabs;
 
 const Analytics: React.FC = () => {
   const { tabs, timeIntervals } = useTracker();
-  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
-    dayjs().subtract(7, 'day'),
-    dayjs()
+  const [dateRange, setDateRange] = useState<[Date, Date]>([
+    subDays(new Date(), 7),
+    new Date(),
   ]);
   const [selectedMetric, setSelectedMetric] = useState('time');
 
   // Prepare chart data
   const prepareDailyData = () => {
     const [start, end] = dateRange;
-    const dailyData = [];
+    const dailyData: any[] = [];
 
-    let current = start;
-    while (current.isBefore(end) || current.isSame(end, 'day')) {
-      const dateStr = current.format('YYYY-MM-DD');
+    const days = eachDayOfInterval({ start, end });
+    days.forEach((d) => {
+      const dateStr = formatDate(d);
       const summary = calculateDailySummary(tabs, dateStr);
 
       dailyData.push({
@@ -39,9 +39,7 @@ const Analytics: React.FC = () => {
         siteCount: summary.siteCount,
         mostVisited: summary.mostVisitedSite,
       });
-
-      current = current.add(1, 'day');
-    }
+    });
 
     return dailyData;
   };
@@ -116,8 +114,7 @@ const Analytics: React.FC = () => {
         <Row gutter={16} align="middle">
           <Col>
             <RangePicker
-              value={dateRange}
-              onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+              onChange={(_dates, dateStrings) => dateStrings && dateStrings[0] && dateStrings[1] && setDateRange([new Date(dateStrings[0]), new Date(dateStrings[1])])}
               allowClear={false}
             />
           </Col>
