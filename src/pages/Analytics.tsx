@@ -53,21 +53,21 @@ const Analytics: React.FC = () => {
   };
 
   const prepareTopSitesData = () => {
-    const siteStats = new Map();
+    const siteStats = new Map<string, number>();
 
-    tabs.forEach(tab => {
+    tabs.forEach((tab) => {
       const hostname = getHostname(tab.url);
       const totalTime = tab.days.reduce((sum, day) => sum + day.summary, 0);
 
-      if (siteStats.has(hostname)) {
-        siteStats.set(hostname, siteStats.get(hostname) + totalTime);
-      } else {
-        siteStats.set(hostname, totalTime);
-      }
+      siteStats.set(hostname, (siteStats.get(hostname) || 0) + totalTime);
     });
 
     return Array.from(siteStats.entries())
-      .map(([site, time]) => ({ site, time, count: tabs.filter(t => getHostname(t.url) === site).length }))
+      .map(([site, time]) => ({
+        site,
+        time,
+        sessions: timeIntervals.filter((i) => getHostname(i.url) === site && i.duration > 0).length,
+      }))
       .sort((a, b) => b.time - a.time)
       .slice(0, 10);
   };
@@ -94,14 +94,14 @@ const Analytics: React.FC = () => {
       render: (time: number) => formatDuration(time),
     },
     {
-      title: 'Visits',
-      dataIndex: 'count',
-      key: 'count',
+      title: 'Sessions',
+      dataIndex: 'sessions',
+      key: 'sessions',
     },
     {
       title: 'Avg. Session',
       key: 'avgSession',
-      render: (record: any) => formatDuration(Math.floor(record.time / record.count)),
+      render: (record: any) => record.sessions > 0 ? formatDuration(Math.floor(record.time / record.sessions)) : '0s',
     },
   ];
 
