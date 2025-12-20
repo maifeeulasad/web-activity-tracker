@@ -200,7 +200,7 @@ export const useSiteLimits = (): UseSiteLimitsResult => {
 
 interface UseSettingsResult {
   settings: Settings;
-  updateSetting: (key: keyof Settings, value: any) => Promise<void>;
+  updateSetting: <K extends keyof Settings>(key: K, value: Settings[K]) => Promise<void>;
   resetSettings: () => Promise<void>;
 }
 
@@ -231,9 +231,10 @@ export const useSettings = (): UseSettingsResult => {
     loadSettings();
   }, [loadSettings]);
 
-  const updateSetting = useCallback(async (key: keyof Settings, value: any) => {
+  const updateSetting = useCallback(async <K extends keyof Settings>(key: K, value: Settings[K]) => {
     try {
-      await storageManager.saveSetting(key, value);
+      // Key may be narrowed by caller, but storageManager.saveSetting accepts string keys now
+      await storageManager.saveSetting(key as string, value);
       setSettings(prev => ({ ...prev, [key]: value }));
     } catch (error) {
       console.error('Error updating setting:', error);
@@ -245,6 +246,7 @@ export const useSettings = (): UseSettingsResult => {
       // Clear all settings from the database
       const allSettings = await storageManager.getAllSettings();
       for (const key of Object.keys(allSettings)) {
+        // key here is a string; storage manager accepts string keys
         await storageManager.saveSetting(key, undefined);
       }
       setSettings(defaultSettings);
