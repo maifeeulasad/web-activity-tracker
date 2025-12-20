@@ -3,6 +3,7 @@ import { Card, Row, Col, Statistic, Table, Tag, Spin } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined, ClockCircleOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useTracker } from '../hooks/useTracker';
 import { formatDuration, formatDate, calculateDailySummary, getHostname } from '../utils/helpers';
+import { calculateWebsiteProductivity, getProductivityRecommendation } from '../utils/productivityData';
 
 const Dashboard: React.FC = () => {
   const { tabs } = useTracker();
@@ -82,13 +83,26 @@ const Dashboard: React.FC = () => {
       title: 'Productivity',
       dataIndex: 'productivity',
       key: 'productivity',
-      render: (score: number) => {
-        let color = 'default';
-        if (score >= 80) color = 'green';
-        else if (score >= 60) color = 'orange';
-        else if (score >= 40) color = 'red';
-
-        return <Tag color={color}>{score}%</Tag>;
+      render: (score: number, record: any) => {
+        const recommendation = getProductivityRecommendation(score);
+        
+        return (
+          <div>
+            <Tag 
+              color={record.productivityColor || recommendation.color}
+              style={{ marginBottom: '4px' }}
+            >
+              {score}%
+            </Tag>
+            <div style={{ 
+              fontSize: '11px', 
+              color: '#666',
+              fontWeight: record.productivityLevel === 'High' ? 'bold' : 'normal'
+            }}>
+              {record.productivityLevel}
+            </div>
+          </div>
+        );
       },
     },
   ];
@@ -151,16 +165,25 @@ const Dashboard: React.FC = () => {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
-          <Card title="Top Sites Today" style={{ height: '400px' }}>
+          <Card title="Top Sites Today (with Productivity Scores)" style={{ height: '400px' }}>
             <Table
-              dataSource={todayStats?.topSites?.slice(0, 5).map((site, index) => ({
-                key: index,
-                url: site.url,
-                time: site.time,
-                sessions: site.sessions || 0,
-                productivity: site.productivityScore ?? Math.floor(Math.random() * 40) + 60,
-                favicon: site.favicon,
-              })) || []}
+              dataSource={todayStats?.topSites?.slice(0, 5).map((site, index) => {
+                const hostname = getHostname(site.url);
+                const productivityData = calculateWebsiteProductivity(hostname);
+                const recommendation = getProductivityRecommendation(productivityData.score);
+                
+                return {
+                  key: index,
+                  url: site.url,
+                  hostname,
+                  time: site.time,
+                  sessions: site.sessions || 0,
+                  productivity: Math.round(productivityData.score),
+                  productivityLevel: recommendation.level,
+                  productivityColor: recommendation.color,
+                  favicon: site.favicon,
+                };
+              }) || []}
               columns={tableColumns}
               pagination={false}
               size="small"
