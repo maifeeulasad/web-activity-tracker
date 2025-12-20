@@ -32,9 +32,6 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Build extension package
-        run: pnpm run build:extension
-
       - name: Check for packaged artifact
         id: check
         run: |
