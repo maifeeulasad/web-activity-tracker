@@ -24,6 +24,8 @@ module.exports = {
     rules: {
         // Relax some rules to keep linting developer-friendly
         'no-unused-vars': 'off',
+        // Allow explicit any in some edge cases to ease migration/faster fixes
+        '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
         'react/react-in-jsx-scope': 'off',
         'react/prop-types': 'off',
