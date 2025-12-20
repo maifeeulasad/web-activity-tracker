@@ -158,7 +158,38 @@ class StorageManager {
   async saveTab(tab: ITab): Promise<void> {
     await this.init();
     const entity = TabEntity.fromInterface(tab);
-    await this.db!.TabEntity.create(entity);
+    await this.db!.TabEntity.update(entity);
+  }
+
+  async saveOrUpdateTab(tab: ITab): Promise<void> {
+    await this.init();
+    const entity = TabEntity.fromInterface(tab);
+    
+    // Check if tab exists
+    const existing = await this.db!.TabEntity.read(entity.url);
+    if (existing) {
+      // Merge with existing data
+      entity.summaryTime = (existing.summaryTime || 0) + (entity.summaryTime || 0);
+      entity.counter = (existing.counter || 0) + (entity.counter || 0);
+      
+      // Merge days data
+      const existingDays = new Map(existing.days?.map((d:any) => [d.date, d]) || []);
+      entity.days = entity.days?.map(day => {
+        const existingDay = existingDays.get(day.date);
+        if (existingDay) {
+          return {
+            ...day,
+            // @ts-ignore
+            summary: (existingDay.summary || 0) + (day.summary || 0),
+            // @ts-ignore
+            counter: (existingDay.counter || 0) + (day.counter || 0),
+          };
+        }
+        return day;
+      }) || existing.days || [];
+    }
+    
+    await this.db!.TabEntity.update(entity);
   }
 
   async getTab(url: string): Promise<ITab | undefined> {
@@ -196,7 +227,7 @@ class StorageManager {
   async saveTimeInterval(interval: ITimeInterval): Promise<void> {
     await this.init();
     const entity = TimeIntervalEntity.fromInterface(interval);
-    await this.db!.TimeIntervalEntity.create(entity);
+    await this.db!.TimeIntervalEntity.update(entity);
   }
 
   async getTimeIntervalsByDate(date: string): Promise<ITimeInterval[]> {
@@ -253,7 +284,7 @@ class StorageManager {
   async saveSiteLimit(limit: ISiteLimit): Promise<void> {
     await this.init();
     const entity = SiteLimitEntity.fromInterface(limit);
-    await this.db!.SiteLimitEntity.create(entity);
+    await this.db!.SiteLimitEntity.update(entity);
   }
 
   async getSiteLimit(url: string): Promise<ISiteLimit | undefined> {
@@ -288,7 +319,7 @@ class StorageManager {
   async saveSetting(key: string, value: any): Promise<void> {
     await this.init();
     const entity = new SettingEntity(key, value);
-    await this.db!.SettingEntity.create(entity);
+    await this.db!.SettingEntity.update(entity);
   }
 
   async getSetting(key: string): Promise<any> {
@@ -309,15 +340,51 @@ class StorageManager {
   // Utility operations
   async clearAllData(): Promise<void> {
     await this.init();
-    const tabs = await this.db!.TabEntity.list();
-    const intervals = await this.db!.TimeIntervalEntity.list();
-    const limits = await this.db!.SiteLimitEntity.list();
-
+    
+    // Clear all object stores
     await Promise.all([
-      ...tabs.map((t: any) => this.db!.TabEntity.delete(t.url)),
-      ...intervals.map((i: any) => this.db!.TimeIntervalEntity.delete(i.id)),
-      ...limits.map((l: any) => this.db!.SiteLimitEntity.delete(l.url)),
+      this.db!.TabEntity.clear(),
+      this.db!.TimeIntervalEntity.clear(),
+      this.db!.SiteLimitEntity.clear(),
+      this.db!.SettingEntity.clear(),
     ]);
+  }
+
+  // Recalculate tab summary from time intervals
+  async recalculateTabSummary(url: string): Promise<void> {
+    await this.init();
+    
+    const intervals = await this.db!.TimeIntervalEntity.findByIndex('tabId', url);
+    if (!intervals || intervals.length === 0) return;
+    
+    const tab = await this.db!.TabEntity.read(url);
+    if (!tab) return;
+    
+    // Reset counters
+    tab.summaryTime = 0;
+    tab.counter = 0;
+    tab.days = [];
+    
+    // Aggregate data from intervals
+    const dayMap = new Map();
+    
+    intervals.forEach((interval: any) => {
+      tab.summaryTime += interval.duration || 0;
+      tab.counter += 1;
+      
+      const day = interval.date;
+      if (!dayMap.has(day)) {
+        dayMap.set(day, { date: day, counter: 0, summary: 0 });
+      }
+      
+      const dayData = dayMap.get(day);
+      dayData.counter += 1;
+      dayData.summary += interval.duration || 0;
+    });
+    
+    tab.days = Array.from(dayMap.values());
+    
+    await this.db!.TabEntity.update(tab);
   }
 
   async exportData(): Promise<{
