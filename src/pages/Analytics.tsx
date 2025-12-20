@@ -24,9 +24,11 @@ const Analytics: React.FC = () => {
   const [selectedMetric, setSelectedMetric] = useState('time');
 
   // Prepare chart data
+  type DailyEntry = { date: string; totalTime: number; siteCount: number; mostVisited: string };
+
   const prepareDailyData = () => {
     const [start, end] = dateRange;
-    const dailyData: any[] = [];
+    const dailyData: DailyEntry[] = [];
 
     const days = eachDayOfInterval({ start, end });
     days.forEach((d) => {
@@ -101,7 +103,7 @@ const Analytics: React.FC = () => {
     {
       title: 'Avg. Session',
       key: 'avgSession',
-      render: (record: any) => record.sessions > 0 ? formatDuration(Math.floor(record.time / record.sessions)) : '0s',
+      render: (record: { time: number; sessions: number }) => record.sessions > 0 ? formatDuration(Math.floor(record.time / record.sessions)) : '0s',
     },
   ];
 
@@ -190,7 +192,7 @@ const Analytics: React.FC = () => {
                   }}
                   yAxis={{
                     label: {
-                      formatter: (v: any) => selectedMetric === 'time' ? formatDuration(Number(v)) : v,
+                      formatter: (v: number | string) => selectedMetric === 'time' ? formatDuration(Number(v)) : String(v),
                     },
                   }}
                   height={300}
