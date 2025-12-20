@@ -75,7 +75,7 @@ export const prepareSessionAnalysisData = (tabs: Tab[], _start: Date, _end: Date
 };
 
 export const prepareWeeklyOverviewData = (tabs: Tab[]) => {
-  // return top 7 days summary
+  // return top 7 sites ranked by total time spent
   return tabs.map(t => ({ url: t.url, time: t.summaryTime, favicon: t.favicon }))
     .sort((a, b) => b.time - a.time)
     .slice(0, 7);
