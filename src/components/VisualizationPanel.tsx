@@ -105,7 +105,7 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
   useEffect(() => {
     const rangeStats = calculateRangeStats(tabs, startDate, endDate);
     setStats(rangeStats);
-  }, [tabs, startDate, endDate]);
+  }, [tabs, startDate, endDate, config]);
   
   const handlePresetChange = (presetId: string) => {
     const preset = CHART_PRESETS.find((p: { id: string }) => p.id === presetId);
