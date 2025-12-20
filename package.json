@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "author": "Maifee Ul Asad<maifeeulasad@gmail.com>",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && pnpm run package",
