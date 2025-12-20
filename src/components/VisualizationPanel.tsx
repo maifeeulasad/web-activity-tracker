@@ -1,5 +1,5 @@
 // Main visualization panel component
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Row, Col, Select, Button, Space, Divider, Tabs } from 'antd';
 import { 
   BarChartOutlined, 
@@ -91,15 +91,15 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
   const [startDate, endDate] = getCurrentDateRange();
   
   // Prepare data for different chart types
-  const chartData = {
+  const chartData = useMemo(() => ({
     timeTrend: prepareTimeTrendData(tabs, timeIntervals, startDate, endDate),
     dailyActivity: prepareDailyActivityData(tabs, startDate, endDate),
     siteBreakdown: prepareSiteBreakdownData(tabs, startDate, endDate),
     productivityTrend: prepareProductivityTrendData(tabs, startDate, endDate),
     hourlyPattern: prepareHourlyPatternData(timeIntervals, new Date()),
     sessionAnalysis: prepareSessionAnalysisData(tabs, startDate, endDate),
-    weeklyOverview: prepareWeeklyOverviewData(tabs)
-  };
+    weeklyOverview: prepareWeeklyOverviewData(tabs),
+  }), [tabs, timeIntervals, startDate, endDate]);
   
   // Calculate summary statistics
   useEffect(() => {
