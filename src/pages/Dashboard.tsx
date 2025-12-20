@@ -149,7 +149,7 @@ const Dashboard: React.FC = () => {
                 key: index,
                 url: site.url,
                 time: site.time,
-                sessions: Math.floor(site.time / 300), // Estimate sessions
+                sessions: site.sessions || 0,
                 productivity: Math.floor(Math.random() * 40) + 60, // Mock productivity score
                 favicon: site.favicon,
               })) || []}
