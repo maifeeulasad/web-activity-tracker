@@ -173,20 +173,18 @@ class StorageManager {
       entity.counter = (existing.counter || 0) + (entity.counter || 0);
       
       // Merge days data
-      const existingDays = new Map(existing.days?.map((d:any) => [d.date, d]) || []);
-      entity.days = entity.days?.map(day => {
+      const existingDays = new Map<string, TabDay>((existing.days || []).map((d: TabDay) => [d.date, d]));
+      entity.days = (entity.days?.map((day: TabDay) => {
         const existingDay = existingDays.get(day.date);
         if (existingDay) {
           return {
-            ...day,
-            // @ts-ignore
-            summary: (existingDay.summary || 0) + (day.summary || 0),
-            // @ts-ignore
-            counter: (existingDay.counter || 0) + (day.counter || 0),
-          };
+            date: day.date,
+            summary: (existingDay.summary ?? 0) + (day.summary ?? 0),
+            counter: (existingDay.counter ?? 0) + (day.counter ?? 0),
+          } as TabDay;
         }
         return day;
-      }) || existing.days || [];
+      }) as TabDay[]) || existing.days || [];
     }
     
     await this.db!.TabEntity.update(entity);
