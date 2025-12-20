@@ -142,7 +142,7 @@ export const calculateDailySummary = (
   totalTime: number;
   siteCount: number;
   mostVisitedSite: string;
-  topSites: Array<{ url: string; time: number; favicon?: string }>;
+  topSites: Array<{ url: string; time: number; sessions: number; favicon?: string }>;
 } => {
   const dayTabs = tabs.filter(tab =>
     tab.days.some(day => day.date === date)
@@ -169,6 +169,7 @@ export const calculateDailySummary = (
       return {
         url: tab.url,
         time: dayData?.summary || 0,
+        sessions: dayData?.counter || 0,
         favicon: tab.favicon,
       };
     })
