@@ -1,5 +1,5 @@
 import { Database, DataClass, KeyPath, Index } from 'idb-ts';
-import { Tab as ITab, TimeInterval as ITimeInterval, SiteLimit as ISiteLimit, TabDay } from '../types';
+import { Tab as ITab, TimeInterval as ITimeInterval, SiteLimit as ISiteLimit, TabDay, Settings } from '../types';
 
 // Entity classes with decorators
 @DataClass()
@@ -120,24 +120,38 @@ class SiteLimitEntity {
   }
 }
 
+type SettingValue = Settings[keyof Settings] | null;
+
 @DataClass()
 class SettingEntity {
   @KeyPath()
   key!: string;
 
-  value!: any;
+  // Settings are strictly typed to the app Settings interface
+  value!: SettingValue;
 
-  constructor(key: string, value: any) {
+  constructor(key: string, value: SettingValue) {
     this.key = key;
     this.value = value;
   }
 }
 
+// Minimal repository interface used by idb-ts repositories in this project
+type Repo<T> = {
+  create(item: T): Promise<void>;
+  read(key: string): Promise<T | undefined>;
+  update(item: T): Promise<void>;
+  delete(key: string): Promise<void>;
+  list(): Promise<T[]>;
+  clear: () => Promise<void>;
+  findByIndex?: (index: string, value: string) => Promise<T[]>;
+};
+
 type DatabaseType = {
-  TabEntity: any;
-  TimeIntervalEntity: any;
-  SiteLimitEntity: any;
-  SettingEntity: any;
+  TabEntity: Repo<TabEntity>;
+  TimeIntervalEntity: Repo<TimeIntervalEntity> & { findByIndex: (index: string, value: string) => Promise<TimeIntervalEntity[]> };
+  SiteLimitEntity: Repo<SiteLimitEntity>;
+  SettingEntity: Repo<SettingEntity>;
 };
 
 class StorageManager {
@@ -150,7 +164,7 @@ class StorageManager {
         TimeIntervalEntity,
         SiteLimitEntity,
         SettingEntity,
-      ]) as Database & DatabaseType;
+      ]) as unknown as Database & DatabaseType;
     }
   }
 
@@ -207,7 +221,7 @@ class StorageManager {
   async getAllTabs(): Promise<ITab[]> {
     await this.init();
     const entities = await this.db!.TabEntity.list();
-    return entities.map((e: any) => ({
+    return (entities as ITab[]).map((e: ITab) => ({
       url: e.url,
       favicon: e.favicon,
       summaryTime: e.summaryTime,
@@ -231,7 +245,7 @@ class StorageManager {
   async getTimeIntervalsByDate(date: string): Promise<ITimeInterval[]> {
     await this.init();
     const entities = await this.db!.TimeIntervalEntity.findByIndex('date', date);
-    return entities.map((e: any) => ({
+    return (entities as ITimeInterval[]).map((e: ITimeInterval) => ({
       id: e.id,
       tabId: e.tabId,
       url: e.url,
@@ -246,7 +260,7 @@ class StorageManager {
   async getTimeIntervalsByTab(tabId: string): Promise<ITimeInterval[]> {
     await this.init();
     const entities = await this.db!.TimeIntervalEntity.findByIndex('tabId', tabId);
-    return entities.map((e: any) => ({
+    return (entities as ITimeInterval[]).map((e: ITimeInterval) => ({
       id: e.id,
       tabId: e.tabId,
       url: e.url,
@@ -261,7 +275,7 @@ class StorageManager {
   async getAllTimeIntervals(): Promise<ITimeInterval[]> {
     await this.init();
     const entities = await this.db!.TimeIntervalEntity.list();
-    return entities.map((e: any) => ({
+    return (entities as ITimeInterval[]).map((e: ITimeInterval) => ({
       id: e.id,
       tabId: e.tabId,
       url: e.url,
@@ -300,7 +314,7 @@ class StorageManager {
   async getAllSiteLimits(): Promise<ISiteLimit[]> {
     await this.init();
     const entities = await this.db!.SiteLimitEntity.list();
-    return entities.map((e: any) => ({
+    return (entities as ISiteLimit[]).map((e: ISiteLimit) => ({
       url: e.url,
       dailyLimit: e.dailyLimit,
       enabled: e.enabled,
@@ -314,25 +328,26 @@ class StorageManager {
   }
 
   // Settings operations
-  async saveSetting(key: string, value: any): Promise<void> {
+
+  async getSetting<T extends keyof Settings>(key: T): Promise<Settings[T] | undefined> {
     await this.init();
-    const entity = new SettingEntity(key, value);
-    await this.db!.SettingEntity.update(entity);
+    const entity = await this.db!.SettingEntity.read(key as string);
+    // entity.value stores the value for the given key (Settings[key]) or null
+    if (!entity || entity.value === null || entity.value === undefined) return undefined;
+    return entity.value as Settings[T];
   }
 
-  async getSetting(key: string): Promise<any> {
-    await this.init();
-    const entity = await this.db!.SettingEntity.read(key);
-    return entity?.value;
-  }
-
-  async getAllSettings(): Promise<Record<string, any>> {
+  async getAllSettings(): Promise<Partial<Settings>> {
     await this.init();
     const entities = await this.db!.SettingEntity.list();
-    return entities.reduce((acc: Record<string, any>, entity: any) => {
-      acc[entity.key] = entity.value;
-      return acc;
-    }, {} as Record<string, any>);
+    const result = {} as Partial<Settings>;
+    (entities as SettingEntity[]).forEach((entity: SettingEntity) => {
+      const k = entity.key as keyof Settings;
+      const v = entity.value as unknown as Settings[typeof k];
+      Object.assign(result, { [k]: v } as Partial<Settings>);
+    });
+
+    return result;
   }
 
   // Utility operations
@@ -340,12 +355,16 @@ class StorageManager {
     await this.init();
     
     // Clear all object stores
-    await Promise.all([
-      this.db!.TabEntity.clear(),
-      this.db!.TimeIntervalEntity.clear(),
-      this.db!.SiteLimitEntity.clear(),
-      this.db!.SettingEntity.clear(),
-    ]);
+    await this.db!.TabEntity.clear();
+    await this.db!.TimeIntervalEntity.clear();
+    await this.db!.SiteLimitEntity.clear();
+    await this.db!.SettingEntity.clear();
+  }
+
+  async saveSetting(key: string, value: SettingValue | null | undefined): Promise<void> {
+    await this.init();
+    const entity = new SettingEntity(key, value ?? null);
+    await this.db!.SettingEntity.update(entity);
   }
 
   // Recalculate tab summary from time intervals
@@ -364,18 +383,18 @@ class StorageManager {
     tab.days = [];
     
     // Aggregate data from intervals
-    const dayMap = new Map();
+    const dayMap = new Map<string, TabDay>();
     
-    intervals.forEach((interval: any) => {
+    intervals.forEach((interval: ITimeInterval) => {
       tab.summaryTime += interval.duration || 0;
       tab.counter += 1;
-      
+
       const day = interval.date;
       if (!dayMap.has(day)) {
         dayMap.set(day, { date: day, counter: 0, summary: 0 });
       }
-      
-      const dayData = dayMap.get(day);
+
+      const dayData = dayMap.get(day)!;
       dayData.counter += 1;
       dayData.summary += interval.duration || 0;
     });
@@ -389,7 +408,7 @@ class StorageManager {
     tabs: ITab[];
     timeIntervals: ITimeInterval[];
     siteLimits: ISiteLimit[];
-    settings: Record<string, any>;
+    settings: Partial<Settings>;
   }> {
     return {
       tabs: await this.getAllTabs(),
@@ -403,7 +422,7 @@ class StorageManager {
     tabs?: ITab[];
     timeIntervals?: ITimeInterval[];
     siteLimits?: ISiteLimit[];
-    settings?: Record<string, any>;
+    settings?: Partial<Settings>;
   }): Promise<void> {
     await this.init();
 
