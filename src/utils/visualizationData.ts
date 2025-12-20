@@ -1,5 +1,6 @@
 import { Tab, TimeInterval } from '../types';
-import { formatDate } from './helpers';
+import { formatDate, getHostname } from './helpers';
+import { calculateWebsiteProductivity } from './productivityData';
 
 export const prepareTimeTrendData = (_tabs: Tab[], intervals: TimeInterval[], _start: Date, _end: Date) => {
   const days: Record<string, number> = {};
@@ -81,11 +82,33 @@ export const prepareWeeklyOverviewData = (tabs: Tab[]) => {
     .slice(0, 7);
 };
 
-export const calculateRangeStats = (tabs: Tab[], _start: Date, _end: Date) => {
-  const totalTime = tabs.reduce((sum, t) => sum + t.summaryTime, 0);
+export const calculateRangeStats = (tabs: Tab[], start: Date, end: Date) => {
+  const startStr = formatDate(start);
+  const endStr = formatDate(end);
+
+  let totalTime = 0;
   const totalSessions = tabs.reduce((sum, t) => sum + t.counter, 0);
-  const uniqueSites = tabs.length;
-  const productivityScore = Math.round(Math.max(0, Math.min(100, 75)));
+
+  // Weighted productivity: sum(time * siteScore) / totalTime
+  let weightedScoreSum = 0;
+
+  tabs.forEach(t => {
+    const timeInRange = (t.days || []).reduce((sum, d) => {
+      if (d.date >= startStr && d.date <= endStr) return sum + (d.summary || 0);
+      return sum;
+    }, 0);
+
+    if (timeInRange > 0) {
+      totalTime += timeInRange;
+      const hostname = getHostname(t.url);
+      const siteScore = calculateWebsiteProductivity(hostname).score;
+      weightedScoreSum += timeInRange * siteScore;
+    }
+  });
+
+  const uniqueSites = tabs.filter(t => (t.days || []).some(d => d.date >= startStr && d.date <= endStr)).length;
+
+  const productivityScore = totalTime > 0 ? Math.round(Math.max(0, Math.min(100, weightedScoreSum / totalTime))) : 75;
 
   return { totalTime, totalSessions, uniqueSites, productivityScore };
 };
