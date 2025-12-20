@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Statistic, Table, Tag, Spin } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined, ClockCircleOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useTracker } from '../hooks/useTracker';
+import { useResponsiveProps } from '../hooks/useResponsive';
 import { formatDuration, formatDate, calculateDailySummary, getHostname } from '../utils/helpers';
 import { calculateWebsiteProductivity, getProductivityRecommendation } from '../utils/productivityData';
 import VisualizationPanel from '../components/VisualizationPanel';
@@ -9,6 +10,7 @@ import VisualizationPanel from '../components/VisualizationPanel';
 const Dashboard: React.FC = () => {
   const { tabs, timeIntervals } = useTracker();
   const [loading, setLoading] = useState(true);
+  const responsive = useResponsiveProps();
   type DailyResult = {
     totalTime: number;
     siteCount: number;
@@ -66,37 +68,62 @@ const Dashboard: React.FC = () => {
       title: 'Website',
       dataIndex: 'url',
       key: 'url',
+      width: responsive.isMobile ? 120 : 200,
       render: (url: string, record: { favicon?: string }) => (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
           {record.favicon && (
             <img
               src={record.favicon}
               alt=""
-              style={{ width: 16, height: 16, marginRight: 8 }}
+              style={{ 
+                width: responsive.isMobile ? 12 : 16, 
+                height: responsive.isMobile ? 12 : 16, 
+                marginRight: responsive.isMobile ? 4 : 8,
+                flexShrink: 0
+              }}
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
           )}
-          <span>{getHostname(url)}</span>
+          <span style={{ 
+            fontSize: responsive.fonts.small,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {getHostname(url)}
+          </span>
         </div>
       ),
     },
     {
-      title: 'Time Spent',
+      title: responsive.isMobile ? 'Time' : 'Time Spent',
       dataIndex: 'time',
       key: 'time',
-      render: (time: number) => formatDuration(time),
+      width: responsive.isMobile ? 60 : 100,
+      render: (time: number) => (
+        <span style={{ fontSize: responsive.fonts.small }}>
+          {formatDuration(time)}
+        </span>
+      ),
     },
     {
-      title: 'Sessions',
+      title: responsive.isMobile ? 'Ses' : 'Sessions',
       dataIndex: 'sessions',
       key: 'sessions',
+      width: responsive.isMobile ? 45 : 80,
+      render: (sessions: number) => (
+        <span style={{ fontSize: responsive.fonts.small }}>
+          {sessions}
+        </span>
+      ),
     },
     {
-      title: 'Productivity',
+      title: responsive.isMobile ? 'Prod' : 'Productivity',
       dataIndex: 'productivity',
       key: 'productivity',
+      width: responsive.isMobile ? 70 : 120,
       render: (score: number, record: TopSiteRow) => {
         const recommendation = getProductivityRecommendation(score);
 
@@ -104,17 +131,23 @@ const Dashboard: React.FC = () => {
           <div>
             <Tag 
               color={record.productivityColor || recommendation.color}
-              style={{ marginBottom: '4px' }}
+              style={{ 
+                marginBottom: responsive.isMobile ? '2px' : '4px',
+                fontSize: responsive.isMobile ? '9px' : '11px',
+                padding: responsive.isMobile ? '0 4px' : '2px 6px'
+              }}
             >
               {score}%
             </Tag>
-            <div style={{ 
-              fontSize: '11px', 
-              color: '#666',
-              fontWeight: record.productivityLevel === 'High' ? 'bold' : 'normal'
-            }}>
-              {record.productivityLevel}
-            </div>
+            {!responsive.isMobile && (
+              <div style={{ 
+                fontSize: '11px', 
+                color: '#666',
+                fontWeight: record.productivityLevel === 'High' ? 'bold' : 'normal'
+              }}>
+                {record.productivityLevel}
+              </div>
+            )}
           </div>
         );
       },
@@ -123,65 +156,121 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
-        <Spin size="large" />
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: responsive.isMobile ? '200px' : '400px' 
+      }}>
+        <Spin size={responsive.isMobile ? "small" : "large"} />
       </div>
     );
   }
 
   return (
     <div>
-      <h2 style={{ marginBottom: '24px' }}>Dashboard</h2>
+      {/* Hide title in mobile/popup mode for more space */}
+      {!responsive.isMobile && <h2 style={{ marginBottom: responsive.spacing.marginBottom }}>Dashboard</h2>}
 
-      {/* Summary Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
+      {/* Summary Cards - Responsive */}
+      <Row 
+        gutter={[responsive.spacing.gutterX, responsive.spacing.gutterY]} 
+        style={{ marginBottom: responsive.spacing.marginBottom }}
+      >
+        <Col xs={12} sm={12} md={6} lg={6}>
+          <Card 
+            {...responsive.card}
+            style={{ 
+              height: '100%',
+              minHeight: responsive.card.minHeight
+            }}
+          >
             <Statistic
-              title="Today's Total Time"
+              title={<span style={{ fontSize: responsive.fonts.small }}>{responsive.isMobile ? 'Time' : "Today's Total Time"}</span>}
               value={todayStats?.totalTime || 0}
               formatter={(value) => formatDuration(Number(value))}
-              prefix={<ClockCircleOutlined />}
+              prefix={<ClockCircleOutlined style={{ fontSize: responsive.fonts.icon }} />}
               suffix={getComparisonIcon(todayStats?.totalTime || 0, yesterdayStats?.totalTime || 0)}
+              valueStyle={{ 
+                fontSize: responsive.fonts.body,
+                color: '#3f8600'
+              }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
+        <Col xs={12} sm={12} md={6} lg={6}>
+          <Card 
+            {...responsive.card}
+            style={{ 
+              height: '100%',
+              minHeight: responsive.card.minHeight
+            }}
+          >
             <Statistic
-              title="Sites Visited"
+              title={<span style={{ fontSize: responsive.fonts.small }}>{responsive.isMobile ? 'Sites' : 'Sites Visited'}</span>}
               value={todayStats?.siteCount || 0}
-              prefix={<GlobalOutlined />}
+              prefix={<GlobalOutlined style={{ fontSize: responsive.fonts.icon }} />}
               suffix={getComparisonIcon(todayStats?.siteCount || 0, yesterdayStats?.siteCount || 0)}
+              valueStyle={{ 
+                fontSize: responsive.fonts.body,
+                color: '#1890ff'
+              }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
+        <Col xs={12} sm={12} md={6} lg={6}>
+          <Card 
+            {...responsive.card}
+            style={{ 
+              height: '100%',
+              minHeight: responsive.card.minHeight
+            }}
+          >
             <Statistic
-              title="Most Visited"
+              title={<span style={{ fontSize: responsive.fonts.small }}>{responsive.isMobile ? 'Top Site' : 'Most Visited'}</span>}
               value={getHostname(todayStats?.mostVisitedSite || 'N/A')}
-              prefix={<GlobalOutlined />}
+              prefix={<GlobalOutlined style={{ fontSize: responsive.fonts.icon }} />}
+              valueStyle={{ 
+                fontSize: responsive.fonts.body,
+                color: '#722ed1'
+              }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
+        <Col xs={12} sm={12} md={6} lg={6}>
+          <Card 
+            {...responsive.card}
+            style={{ 
+              height: '100%',
+              minHeight: responsive.card.minHeight
+            }}
+          >
             <Statistic
-              title="Productivity Score"
+              title={<span style={{ fontSize: responsive.fonts.small }}>{responsive.isMobile ? 'Score' : 'Productivity Score'}</span>}
               value={todayStats?.productivityScore || 0}
               suffix="%"
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ 
+                fontSize: responsive.fonts.body,
+                color: '#52c41a'
+              }}
             />
           </Card>
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[responsive.spacing.gutterX, responsive.spacing.gutterY]}>
         <Col xs={24} lg={12}>
-          <Card title="Top Sites Today (with Productivity Scores)" style={{ height: '400px' }}>
+          <Card 
+            title={<span style={{ fontSize: responsive.fonts.title }}>{responsive.isMobile ? 'Top Sites' : 'Top Sites Today (with Productivity Scores)'}</span>} 
+            bodyStyle={responsive.card.bodyStyle}
+            style={{ 
+              height: 'auto',
+              minHeight: responsive.isMobile ? '300px' : '400px',
+              marginBottom: responsive.isMobile ? '8px' : '0'
+            }}
+          >
             <Table
-              dataSource={todayStats?.topSites?.slice(0, 5).map((site, index) => {
+              dataSource={todayStats?.topSites?.slice(0, responsive.isMobile ? 3 : 5).map((site, index) => {
                 const hostname = getHostname(site.url);
                 const productivityData = calculateWebsiteProductivity(hostname);
                 const recommendation = getProductivityRecommendation(productivityData.score);
@@ -201,16 +290,28 @@ const Dashboard: React.FC = () => {
               columns={tableColumns}
               pagination={false}
               size="small"
+              scroll={{ 
+                x: responsive.isMobile ? 300 : undefined,
+                y: responsive.isMobile ? 200 : 250
+              }}
+              style={{ fontSize: responsive.fonts.small }}
             />
           </Card>
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="Weekly Overview" style={{ height: '400px' }}>
+          <Card 
+            title={<span style={{ fontSize: responsive.fonts.title }}>{responsive.isMobile ? 'Analytics' : 'Weekly Overview'}</span>} 
+            bodyStyle={responsive.card.bodyStyle}
+            style={{ 
+              height: 'auto',
+              minHeight: responsive.isMobile ? '300px' : '400px'
+            }}
+          >
             <VisualizationPanel
               tabs={tabs}
               timeIntervals={timeIntervals}
-              height={300}
+              height={responsive.isMobile ? 200 : 300}
             />
           </Card>
         </Col>
