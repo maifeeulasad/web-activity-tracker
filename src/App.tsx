@@ -143,7 +143,7 @@ const App: React.FC = () => {
                     </div>
                   )
                 }))}
-                onClick={({ key }) => setSelectedMenu(key as MenuKey)}
+                onClick={({ key }: { key: string }) => setSelectedMenu(key as MenuKey)}
                 style={{ 
                   border: 'none',
                   background: 'transparent'
@@ -186,7 +186,7 @@ const App: React.FC = () => {
               mode="inline"
               selectedKeys={[selectedMenu]}
               items={menuItems}
-              onClick={({ key }) => setSelectedMenu(key as MenuKey)}
+              onClick={({ key }: { key: string }) => setSelectedMenu(key as MenuKey)}
             />
           </Sider>
           <Layout style={{ marginLeft: 200 }}>
