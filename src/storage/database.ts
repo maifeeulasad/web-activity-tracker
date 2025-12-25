@@ -177,28 +177,54 @@ class StorageManager {
 
   async saveOrUpdateTab(tab: ITab): Promise<void> {
     await this.init();
+    
+    // Validate input data to prevent impossible values
+    if (!tab.url || typeof tab.summaryTime !== 'number') {
+      console.warn('Invalid tab data:', tab);
+      return;
+    }
+    
+    if (!Array.isArray(tab.days)) {
+      console.warn('Invalid days data:', tab.days);
+      tab.days = [];
+    }
+    
     const entity = TabEntity.fromInterface(tab);
     
     // Check if tab exists
     const existing = await this.db!.TabEntity.read(entity.url);
     if (existing) {
-      // Merge with existing data
-      entity.summaryTime = (existing.summaryTime || 0) + (entity.summaryTime || 0);
-      entity.counter = (existing.counter || 0) + (entity.counter || 0);
+      // Only add the new portion of time, not the accumulated total
+      const newTime = Math.max(0, entity.summaryTime - (existing.summaryTime || 0));
+      const newCounter = Math.max(0, entity.counter - (existing.counter || 0));
       
-      // Merge days data
-      const existingDays = new Map<string, TabDay>((existing.days || []).map((d: TabDay) => [d.date, d]));
-      entity.days = (entity.days?.map((day: TabDay) => {
-        const existingDay = existingDays.get(day.date);
-        if (existingDay) {
-          return {
-            date: day.date,
-            summary: (existingDay.summary ?? 0) + (day.summary ?? 0),
-            counter: (existingDay.counter ?? 0) + (day.counter ?? 0),
-          } as TabDay;
-        }
-        return day;
-      }) as TabDay[]) || existing.days || [];
+      // If no new time was added, just update other fields
+      if (newTime === 0 && newCounter === 0) {
+        // Update favicon and other metadata without changing time counters
+        entity.summaryTime = existing.summaryTime || 0;
+        entity.counter = existing.counter || 0;
+        entity.days = existing.days || [];
+      } else {
+        // Add only the new increments
+        entity.summaryTime = (existing.summaryTime || 0) + newTime;
+        entity.counter = (existing.counter || 0) + newCounter;
+        
+        // Merge days data with only new increments
+        const existingDays = new Map<string, TabDay>((existing.days || []).map((d: TabDay) => [d.date, d]));
+        entity.days = (entity.days?.map((day: TabDay) => {
+          const existingDay = existingDays.get(day.date);
+          if (existingDay) {
+            const newDayTime = Math.max(0, day.summary - (existingDay.summary || 0));
+            const newDayCounter = Math.max(0, day.counter - (existingDay.counter || 0));
+            return {
+              date: day.date,
+              summary: (existingDay.summary || 0) + newDayTime,
+              counter: (existingDay.counter || 0) + newDayCounter,
+            } as TabDay;
+          }
+          return day;
+        }) as TabDay[]) || existing.days || [];
+      }
     }
     
     await this.db!.TabEntity.update(entity);
@@ -238,8 +264,20 @@ class StorageManager {
   // Time interval operations
   async saveTimeInterval(interval: ITimeInterval): Promise<void> {
     await this.init();
+    
+    // Validate interval data
+    if (!interval.id || !interval.url || typeof interval.duration !== 'number') {
+      console.warn('Invalid interval data:', interval);
+      return;
+    }
+    
+    if (interval.duration < 0 || interval.duration > 86400) { // Max 24 hours per interval
+      console.warn('Invalid interval duration:', interval.duration);
+      return;
+    }
+    
     const entity = TimeIntervalEntity.fromInterface(interval);
-    await this.db!.TimeIntervalEntity.update(entity);
+    await this.db!.TimeIntervalEntity.update(entity); // Use update as per idb-ts API
   }
 
   async getTimeIntervalsByDate(date: string): Promise<ITimeInterval[]> {
