@@ -4,6 +4,7 @@ import { storageManager } from './storage/database';
 // Track current active tab and timing
 let currentTab: chrome.tabs.Tab | null = null;
 let currentStartTime: number | null = null;
+let isProcessingTabChange = false; // Prevent race conditions
 
 // Initialize storage manager
 async function initializeStorage() {
@@ -92,26 +93,30 @@ async function updateTabSummary(tabInfo: chrome.tabs.Tab, additionalTime: number
       };
     }
 
-    // Update summary time and counter
-    tab.summaryTime += additionalTime;
-    tab.counter += 1;
+    // Create a new tab object with the additional time (don't modify the existing one)
+    const updatedTab = {
+      ...tab,
+      summaryTime: tab.summaryTime + additionalTime,
+      counter: tab.counter + 1,
+      days: [...tab.days], // Create a copy of days array
+    };
 
     // Update today's data
-    let todayData = tab.days.find(d => d.date === today);
+    let todayData = updatedTab.days.find(d => d.date === today);
     if (!todayData) {
       todayData = {
         date: today,
         counter: 0,
         summary: 0,
       };
-      tab.days.push(todayData);
+      updatedTab.days.push(todayData);
     }
 
     todayData.summary += additionalTime;
     todayData.counter += 1;
 
     // Use saveOrUpdateTab to handle existing records properly
-    await storageManager.saveOrUpdateTab(tab);
+    await storageManager.saveOrUpdateTab(updatedTab);
 
     // Check site limits
     await checkSiteLimit(normalizedUrl, todayData.summary);
@@ -180,18 +185,33 @@ function stopTracking() {
 
 // Handle tab activation
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  if (isProcessingTabChange) {
+    console.log('Already processing tab change, skipping...');
+    return;
+  }
+  
+  isProcessingTabChange = true;
+  
   try {
+    console.log('Tab activated:', activeInfo.tabId);
     const tab = await chrome.tabs.get(activeInfo.tabId);
-    stopTracking();
-    startTracking(tab);
+    
+    // Small delay to prevent race conditions
+    setTimeout(() => {
+      stopTracking();
+      startTracking(tab);
+      isProcessingTabChange = false;
+    }, 100);
   } catch (error) {
     console.error('Error handling tab activation:', error);
+    isProcessingTabChange = false;
   }
 });
 
 // Handle tab updates (URL changes)
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.active) {
+  if (changeInfo.status === 'complete' && tab.active && !isProcessingTabChange) {
+    console.log('Tab updated:', tab.url);
     stopTracking();
     startTracking(tab);
   }
@@ -199,15 +219,23 @@ chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
 
 // Handle window focus changes
 chrome.windows.onFocusChanged.addListener(async (windowId) => {
+  if (isProcessingTabChange) {
+    return;
+  }
+  
   if (windowId === chrome.windows.WINDOW_ID_NONE) {
     // Browser lost focus
+    console.log('Browser lost focus');
     stopTracking();
   } else {
     // Browser gained focus
+    console.log('Browser gained focus');
     try {
       const [tab] = await chrome.tabs.query({ active: true, windowId });
-      if (tab) {
-        startTracking(tab);
+      if (tab && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('about:')) {
+        setTimeout(() => {
+          startTracking(tab);
+        }, 200); // Small delay to ensure tab is fully active
       }
     } catch (error) {
       console.error('Error handling window focus:', error);
@@ -226,10 +254,16 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.alarms.create('periodicSave', { periodInMinutes: 1 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'periodicSave' && currentTab && currentStartTime) {
+  if (alarm.name === 'periodicSave' && currentTab && currentStartTime && !isProcessingTabChange) {
     const now = Date.now();
-    // Save accumulated time
-    saveTimeInterval(currentTab, currentStartTime, now);
+    const duration = now - currentStartTime;
+    
+    // Only save if we have a meaningful interval (at least 2 seconds)
+    if (duration >= 2000) {
+      console.log('Periodic save for:', currentTab.url, 'Duration:', Math.floor(duration / 1000), 'seconds');
+      saveTimeInterval(currentTab, currentStartTime, now);
+    }
+    
     // Reset start time for next interval
     currentStartTime = now;
   }
