@@ -36,7 +36,7 @@ const Settings: React.FC = () => {
       const normalized = value === null ? (typeof settings[key] === 'number' ? (settings[key] as number) : value) : value;
       await updateSetting(key, normalized as typeof settings[K]);
       message.success('Setting updated successfully');
-    } catch (error) {
+    } catch {
       message.error('Failed to update setting');
     }
   };
@@ -60,7 +60,7 @@ const Settings: React.FC = () => {
       URL.revokeObjectURL(url);
 
       message.success('Data exported successfully');
-    } catch (error) {
+    } catch {
       message.error('Failed to export data');
     } finally {
       setLoading(false);
@@ -81,7 +81,7 @@ const Settings: React.FC = () => {
 
       // Refresh the page to reload all data
       window.location.reload();
-    } catch (error) {
+    } catch {
       message.error('Failed to import data. Please check the file format.');
     } finally {
       setLoading(false);
@@ -96,7 +96,7 @@ const Settings: React.FC = () => {
       await storageManager.clearAllData();
       message.success('All data cleared successfully');
       window.location.reload();
-    } catch (error) {
+    } catch {
       message.error('Failed to clear data');
     } finally {
       setLoading(false);
@@ -109,7 +109,7 @@ const Settings: React.FC = () => {
       await resetSettings();
       message.success('Settings reset successfully');
       window.location.reload();
-    } catch (error) {
+    } catch {
       message.error('Failed to reset settings');
     } finally {
       setLoading(false);
