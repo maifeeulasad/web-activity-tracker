@@ -33,6 +33,23 @@ const config: Linter.FlatConfig[] = [
         // project: './tsconfig.json',
         // tsconfigRootDir: __dirname,
       },
+      globals: {
+        // Browser globals
+        window: 'readonly',
+        document: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearTimeout: 'readonly',
+        clearInterval: 'readonly',
+        URL: 'readonly',
+        Blob: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLImageElement: 'readonly',
+        // Chrome Extension API
+        chrome: 'readonly',
+      },
     },
     settings: {
       react: { version: 'detect' },
