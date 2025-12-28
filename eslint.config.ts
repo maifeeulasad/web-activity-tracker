@@ -26,7 +26,7 @@ const config: Linter.FlatConfig[] = [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        ecmaVersion: 2020,
+        ecmaVersion: 2022,
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
         // If you want type-aware rules, uncomment the next two lines and ensure `tsconfig.json` exists
