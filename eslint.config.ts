@@ -74,6 +74,23 @@ const config: Linter.FlatConfig[] = [
     },
   },
 
+  // Node.js config for build files like vite.config.ts
+  {
+    files: ['vite.config.ts', 'eslint.config.ts', '*.config.js', '*.config.ts'],
+    languageOptions: {
+      globals: {
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
+        exports: 'readonly',
+      },
+    },
+  },
+
   // Tests override
   {
     files: ['**/*.test.*', '**/*.spec.*', 'tests/**'],
