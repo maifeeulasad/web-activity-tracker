@@ -97,7 +97,16 @@ const config: Linter.FlatConfig[] = [
   // Tests override
   {
     files: ['**/*.test.*', '**/*.spec.*', 'tests/**'],
-    languageOptions: { globals: { jest: true } },
+    languageOptions: { 
+      globals: { 
+        jest: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+      } 
+    },
   },
   
   // Ignore patterns (replaces .eslintignore)
