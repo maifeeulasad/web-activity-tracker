@@ -48,7 +48,7 @@ const App: React.FC = () => {
       else if (h === 'limits') setSelectedMenu('limits');
       else if (h === 'settings') setSelectedMenu('settings');
       else if (h === 'dashboard') setSelectedMenu('dashboard');
-    } catch (e) {
+    } catch {
       // ignore
     }
   }, []);
