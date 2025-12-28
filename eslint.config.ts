@@ -96,6 +96,21 @@ const config: Linter.FlatConfig[] = [
     files: ['**/*.test.*', '**/*.spec.*', 'tests/**'],
     languageOptions: { globals: { jest: true } },
   },
+  
+  // Ignore patterns (replaces .eslintignore)
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      '.vscode/**',
+      '*.zip',
+      'public/icons/**',
+      'build/**',
+      'coverage/**',
+      '*.min.js',
+      'web-activity-tracker/**',
+    ],
+  },
 ];
 
 export default config;
