@@ -71,6 +71,9 @@ const config: Linter.FlatConfig[] = [
       // React rules
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      
+      // React Hooks rules
+      ...reactHooks.configs.recommended.rules,
     },
   },
 
