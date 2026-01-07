@@ -46,14 +46,12 @@ Web Activity Tracker is a privacy-focused Chrome extension that helps you unders
 
 ## 🖼️ Screenshots
 
-*Dashboard view with analytics and top sites*
-![Dashboard](docs/screenshot-dashboard.png)
-
-*Time tracking interface*
-![Time Tracker](docs/screenshot-tracker.png)
-
-*Site limits configuration*
-![Site Limits](docs/screenshot-limits.png)
+Screenshots coming soon! The extension features:
+- Dashboard view with analytics and top sites
+- Time tracking interface with session history
+- Site limits configuration panel
+- Analytics charts and visualizations
+- Settings page with privacy controls
 
 ## 🚀 Installation
 
@@ -162,13 +160,13 @@ web-activity-tracker/
 
 ## 🛠️ Tech Stack
 
-- **Framework**: React 18.3.1 with TypeScript
-- **UI Library**: Ant Design 6.0.0 (antd)
+- **Framework**: React 18.3+ with TypeScript 5.3+
+- **UI Library**: Ant Design 6.0+ (antd)
 - **Charts**: Ant Design Charts (@antv/g2plot)
 - **Storage**: IndexedDB (via idb-ts)
-- **Build Tool**: Vite 5.2.0
+- **Build Tool**: Vite 5.2+
 - **Code Quality**: ESLint with TypeScript support
-- **Date Handling**: date-fns 4.1.0
+- **Date Handling**: date-fns 4.1+
 
 ## 🔒 Privacy
 
