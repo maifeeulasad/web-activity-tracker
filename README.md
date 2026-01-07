@@ -202,9 +202,16 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feat-amazing-feature`)
-3. Commit your changes (`git commit -m "Add amazing feature with detailed functionality"`)
+3. Commit your changes (`git commit -m "[feat]: added amazing feature; improved functionality;"`)
 4. Push to the branch (`git push origin feat-amazing-feature`)
 5. Open a Pull Request
+
+**Commit Message Format**: `[tag1,tag2,..,tagn]: message1; message2;..`
+
+Examples:
+- `[feat]: added new analytics dashboard;`
+- `[fix,bug]: resolved memory leak; improved performance;`
+- `[chore]: updated dependencies; cleaned up code;`
 
 ## 📝 License
 
